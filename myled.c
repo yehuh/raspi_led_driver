@@ -30,7 +30,7 @@ static ssize_t led_write(struct file* filp, const char* buf, size_t count, loff_
 	return 1;
 }
 
-static ssize_t my_read(struct file *filp, char *buff, size_t len, loff_t *off)
+static ssize_t led_read(struct file *filp, char *buff, size_t len, loff_t *off)
 {
 	//int major, minor;
 	//short count;
