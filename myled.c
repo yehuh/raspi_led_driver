@@ -16,23 +16,10 @@ static struct cdev cdv;
 static struct class *cls = NULL;
 static volatile u32* gpio_base = NULL;
 
-static ssize_t led_write(struct file* filp, const char* buf, size_t count, loff_t* pos){
-	char c_buff;
-	if(copy_from_user(&c_buff, buf, sizeof(char))){
-		return -EFAULT;
-	}
-	if(c_buff == '0'){
-		gpio_base[10] = 1 << 25;//set 25 th bit in 0x28 (clear output)
-	}else if(c_buff == '1'){
-		gpio_base[7] = 1 << 25; //set 25 th bit in 0x1C (set out put)
-	}
-
-	return 1;
-}
-
 static struct file_operations led_fops = {
 	.owner = THIS_MODULE,
-	.write = led_write
+	.write = led_write,
+	.read  = led_read
 };
 
 static int __init init_mod(void){
@@ -71,6 +58,47 @@ static int __init init_mod(void){
 	device_create(cls, NULL, dev, NULL, "myled%d", MINOR(dev));
 	return 0;
 }
+
+static ssize_t led_write(struct file* filp, const char* buf, size_t count, loff_t* pos){
+	char c_buff;
+	if(copy_from_user(&c_buff, buf, sizeof(char))){
+		return -EFAULT;
+	}
+	if(c_buff == '0'){
+		gpio_base[10] = 1 << 25;//set 25 th bit in 0x28 (clear output)
+	}else if(c_buff == '1'){
+		gpio_base[7] = 1 << 25; //set 25 th bit in 0x1C (set output)
+	}
+
+	return 1;
+}
+
+static ssize_t my_read(struct file *filp, char *buff, size_t len, loff_t *off)
+{
+	int major, minor;
+	//short count;
+
+	//major = MAJOR(filp->f_dentry->d_inode->i_rdev);
+	//minor = MINOR(filp->f_dentry->d_inode->i_rdev);
+	printk("GPIO OPERATION READ:");
+	char gpio_25_lv = (char)((gpio_base[13]<<25) & 0x00000001);
+	
+	*buff = gpio_25_lv;
+	// switch(minor){
+		// case 0:
+			// strcpy(msg,"DATA FROM MOUDLE: minor : 0");
+			// break;
+		// case 1:
+			// strcpy(msg,"DATA FROM MOUDLE: minor : 1");
+			// break;
+		// default:
+			// len = 0;
+	// }
+	//count = copy_to_user( buff, msg, len);
+	return 0;
+}
+
+
 
 static void __exit cleanup_mod(void){
 	cdev_del(&cdv);
